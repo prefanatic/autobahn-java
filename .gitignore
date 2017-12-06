@@ -4,7 +4,7 @@ Autobahn/doc/html/*
 
 ### Java ###
 *.class
-*.jar
+#*.jar
 
 ### Maven ###
 target/
