@@ -48,13 +48,13 @@ class OkHttpTransport(private val uri: String) : ITransport {
             }
 
             override fun onMessage(webSocket: WebSocket?, text: String) {
-                LOGGER.e("onMessage: $webSocket, $text")
+                LOGGER.d("onMessage: $webSocket, $text")
 
                 transportHandler?.onMessage(text.toByteArray(Charsets.UTF_8), false)
             }
 
             override fun onMessage(webSocket: WebSocket?, bytes: ByteString?) {
-                LOGGER.e("onMessage: $webSocket, $bytes")
+                LOGGER.d("onMessage: $webSocket, $bytes")
 
                 transportHandler?.onMessage(bytes?.toByteArray(), true)
             }
@@ -66,11 +66,11 @@ class OkHttpTransport(private val uri: String) : ITransport {
             }
 
             override fun onClosing(webSocket: WebSocket?, code: Int, reason: String?) {
-                LOGGER.e("onClosing: $webSocket, $code, $reason")
+                LOGGER.d("onClosing: $webSocket, $code, $reason")
             }
 
             override fun onClosed(webSocket: WebSocket?, code: Int, reason: String?) {
-                LOGGER.e("onClosed: $webSocket, $code, $reason")
+                LOGGER.d("onClosed: $webSocket, $code, $reason")
 
                 // TODO: We should look at the code, and determine if was a clean disconnect or not.
                 transportHandler?.onDisconnect(false)

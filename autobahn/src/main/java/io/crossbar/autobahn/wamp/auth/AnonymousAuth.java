@@ -11,11 +11,11 @@
 
 package io.crossbar.autobahn.wamp.auth;
 
+import io.crossbar.autobahn.wamp.messages.Authenticate;
 import java8.util.concurrent.CompletableFuture;
 
 import io.crossbar.autobahn.wamp.interfaces.IAuthenticator;
-import io.crossbar.autobahn.wamp.types.Challenge;
-import io.crossbar.autobahn.wamp.types.ChallengeResponse;
+import io.crossbar.autobahn.wamp.messages.Challenge;
 import io.crossbar.autobahn.wamp.Session;
 
 public class AnonymousAuth implements IAuthenticator {
@@ -26,9 +26,14 @@ public class AnonymousAuth implements IAuthenticator {
     public AnonymousAuth () {
     }
 
-    public CompletableFuture<ChallengeResponse> onChallenge(Session session, Challenge challenge) {
+    public CompletableFuture<Authenticate> onChallenge(Session session, Challenge challenge) {
         // anonymous authentication in WAMP will NOT invoke this callback!
         // FIXME
-        return CompletableFuture.completedFuture(new ChallengeResponse(null, null));
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public String getAuthMethod() {
+        return "anonymous";
     }
 }

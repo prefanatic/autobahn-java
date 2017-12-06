@@ -14,10 +14,11 @@ package io.crossbar.autobahn.wamp.interfaces;
 import java8.util.concurrent.CompletableFuture;
 
 import io.crossbar.autobahn.wamp.Session;
-import io.crossbar.autobahn.wamp.types.Challenge;
-import io.crossbar.autobahn.wamp.types.ChallengeResponse;
+import io.crossbar.autobahn.wamp.messages.Challenge;
+import io.crossbar.autobahn.wamp.messages.Authenticate;
 
 
 public interface IAuthenticator {
-    CompletableFuture<ChallengeResponse> onChallenge(Session session, Challenge challenge);
+    CompletableFuture<Authenticate> onChallenge(Session session, Challenge challenge);
+    String getAuthMethod();
 }

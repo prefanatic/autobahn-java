@@ -12,11 +12,12 @@
 package io.crossbar.autobahn.wamp.auth;
 
 import java.util.Map;
+
+import io.crossbar.autobahn.wamp.messages.Authenticate;
 import java8.util.concurrent.CompletableFuture;
 
 import io.crossbar.autobahn.wamp.interfaces.IAuthenticator;
-import io.crossbar.autobahn.wamp.types.Challenge;
-import io.crossbar.autobahn.wamp.types.ChallengeResponse;
+import io.crossbar.autobahn.wamp.messages.Challenge;
 import io.crossbar.autobahn.wamp.Session;
 
 
@@ -33,7 +34,12 @@ public class TicketAuth implements IAuthenticator {
         this.authextra = authextra;
     }
 
-    public CompletableFuture<ChallengeResponse> onChallenge(Session session, Challenge challenge) {
-        return CompletableFuture.completedFuture(new ChallengeResponse(this.ticket, this.authextra));
+    public CompletableFuture<Authenticate> onChallenge(Session session, Challenge challenge) {
+        return CompletableFuture.completedFuture(new Authenticate(this.ticket, this.authextra));
+    }
+
+    @Override
+    public String getAuthMethod() {
+        return authmethod;
     }
 }

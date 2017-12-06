@@ -31,6 +31,7 @@ public class Client {
 
     private Session mSession;
     private String mRealm;
+    private String mAuthId;
     private List<IAuthenticator> mAuthenticators;
 
     private Executor mExecutor;
@@ -81,23 +82,24 @@ public class Client {
         return mExecutor == null ? Platform.autoSelectExecutor(): mExecutor;
     }
 
-    public void add(Session session, String realm, List<IAuthenticator> authenticators) {
+    public void add(Session session, String realm, String authId, List<IAuthenticator> authenticators) {
         if (mSession != null) {
             throw new IllegalStateException("Addition of multiple sessions not implemented");
         }
         mSession = session;
         mRealm = realm;
+        mAuthId = authId;
         mAuthenticators = authenticators;
     }
 
     public void add(Session session, String realm) {
-        add(session, realm, null);
+        add(session, realm, null, null);
     }
 
     public CompletableFuture<ExitInfo> connect() {
         CompletableFuture<ExitInfo> exitFuture = new CompletableFuture<>();
         mSession.addOnConnectListener((session) ->
-                mSession.join(mRealm).thenAccept(details ->
+                mSession.join(mRealm, mAuthId, mAuthenticators).thenAccept(details ->
                         LOGGER.i(String.format("JOINED session=%s realm=%s", details.sessionID,
                                 details.realm))));
         mSession.addOnDisconnectListener((session, wasClean) ->

@@ -18,10 +18,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.crossbar.autobahn.wamp.messages.Authenticate;
+import io.crossbar.autobahn.wamp.messages.Challenge;
 import java8.util.concurrent.CompletableFuture;
 import java8.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 
+import io.crossbar.autobahn.wamp.interfaces.IAuthenticator;
 import java8.util.function.BiConsumer;
 import java8.util.function.BiFunction;
 import java8.util.function.Consumer;
@@ -117,6 +121,7 @@ public class Session implements ISession, ITransportHandler {
     private long mSessionID;
     private boolean mGoodbyeSent;
     private String mRealm;
+    private List<IAuthenticator> mAuthenticators;
 
     public Session() {
         mOnJoinListeners = new ArrayList<>();
@@ -206,7 +211,20 @@ public class Session implements ISession, ITransportHandler {
     }
 
     private void onPreSessionMessage(IMessage message) throws Exception {
-        if (message instanceof Welcome) {
+        if (message instanceof Challenge) {
+            Challenge msg = (Challenge) message;
+
+            // Look at our authenticators to determine how we should respond.
+            for (IAuthenticator authenticator : mAuthenticators) {
+                if (authenticator.getAuthMethod().equals(msg.method)) {
+                    Authenticate authenticate = authenticator.onChallenge(this, msg)
+                            .get();
+
+                    runAsync(() -> send(authenticate), getExecutor());
+                }
+            }
+
+        } else if (message instanceof Welcome) {
             Welcome msg = (Welcome) message;
             mState = STATE_JOINED;
             mSessionID = msg.session;
@@ -243,7 +261,6 @@ public class Session implements ISession, ITransportHandler {
                 }
             }, getExecutor());
         } else {
-            // FIXME: handle Challenge message here.
             LOGGER.w("FIXME (no session): unprocessed message:");
             LOGGER.w(message.toString());
         }
@@ -1130,11 +1147,11 @@ public class Session implements ISession, ITransportHandler {
 
     @Override
     public CompletableFuture<SessionDetails> join(String realm) {
-        return join(realm, null);
+        return join(realm, null, null);
     }
 
     @Override
-    public CompletableFuture<SessionDetails> join(String realm, List<String> authMethods) {
+    public CompletableFuture<SessionDetails> join(String realm, String authId, List<IAuthenticator> authenticators) {
         LOGGER.d("Called join() with realm=" + realm);
         mRealm = realm;
         mGoodbyeSent = false;
@@ -1143,7 +1160,22 @@ public class Session implements ISession, ITransportHandler {
         roles.put("subscriber", new HashMap<>());
         roles.put("caller", new HashMap<>());
         roles.put("callee", new HashMap<>());
-        send(new Hello(realm, roles));
+
+        mAuthenticators = authenticators;
+
+        Hello hello;
+        if (authId != null && mAuthenticators != null && !mAuthenticators.isEmpty()) {
+            // Collect the authenticators.
+            List<String> authMethods = new ArrayList<>();
+            for (IAuthenticator authenticator : mAuthenticators) {
+                authMethods.add(authenticator.getAuthMethod());
+            }
+            hello = new Hello(realm, authMethods, authId, roles);
+        } else {
+            hello = new Hello(realm, roles);
+        }
+        send(hello);
+
         mJoinFuture = new CompletableFuture<>();
         mState = STATE_HELLO_SENT;
         return mJoinFuture;
